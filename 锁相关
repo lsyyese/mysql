@@ -1,0 +1,28 @@
+在mysql 5.5中，information_schema 库中增加了三个关于锁的表（innoDB引擎）：
+innodb_trx         ## 当前运行的所有事务
+innodb_locks       ## 当前出现的锁
+innodb_lock_waits  ## 锁等待的对应关系
+
+use information_schema;
+SELECT 
+    w.requesting_trx_id AS '等待的trx_id',
+    r.trx_mysql_thread_id AS '等待的thread_id',
+    r.trx_query AS '等待的query',
+    r.trx_wait_started,
+    w.blocking_trx_id,
+    b.trx_mysql_thread_id AS '阻塞的thread_id',
+    b.trx_query AS '阻塞的query',
+    l.lock_mode AS '锁模式',
+    l.lock_type AS '锁类型',
+    now() 
+FROM
+    INNODB_LOCK_WAITS w 
+    INNER JOIN INNODB_TRX r 
+        ON r.trx_id = w.requesting_trx_id 
+    INNER JOIN INNODB_TRX b 
+        ON b.trx_id = w.blocking_trx_id 
+    LEFT JOIN .INNODB_LOCKS l 
+        ON l.lock_trx_id = b.trx_id 
+ORDER BY r.trx_wait_started \G
+
+5.7直接用select * from sys.innodb_lock_waits\G可以获得以上结果
