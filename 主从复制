@@ -1,0 +1,123 @@
+1. 准备工作
+配置环境：centos6.10，mysql5.7
+先安装、配置好两台MySQL服务器
+server1 IP：172.26.1.131   master-1
+server2 IP：172.26.0.136   master-2
+
+赋权：
+GRANT REPLICATION SLAVE, REPLICATION CLIENT ON *.* TO 'repl'@'172.%.%.%' IDENTIFIED BY  'xiadeng@eebbk.mysql#';
+
+2.master-1上操作
+
+create TABLE weidashi( 
+id bigint(20) NOT NULL AUTO_INCREMENT COMMENT '主键id' ,
+name bigint(20) DEFAULT NULL COMMENT '立拍号',
+create_time datetime DEFAULT NULL COMMENT '创建时间', 
+PRIMARY KEY (id))COMMENT='立拍号仓库表';
+
+insert into weidashi(name) values('luoshuyu');
+insert into weidashi(name) values('luoshuyu');
+
+备份数据
+/home/smartwatch/bin/mysqldump -h127.0.0.1 -uroot -p'xiadeng@eebbk.mysql#' -P3306 \
+--single-transaction \
+--default-character-set=utf8mb4 \
+--skip-add-locks \
+--master-data=2  \
+smartwatch  > 0819.sql
+
+
+
+2.master-2上操作
+
+create database smartwatch
+mysql -h127.0.0.1 -uroot -p'xiadeng@eebbk.mysql#' -P3306  smartwatch < 0819.sql
+
+
+查看0819.sql gtid
+reset master; stop slave; reset slave;reset slave all;
+SET GLOBAL gtid_purged='9a00eba2-0093-11ec-95d7-525400040037:1-15';
+change master to \
+    master_host='172.26.1.131', \
+    master_port=3306, \
+    master_user='repl', \
+    master_password='xiadeng@eebbk.mysql#', \
+    master_auto_position=1;
+start slave;
+
+
+show slave status \G 
+*************************** 1. row ***************************
+                             .
+							 .
+             Master_Server_Id: 33067279
+                  Master_UUID: 9a00eba2-0093-11ec-95d7-525400040037
+             Master_Info_File: mysql.slave_master_info
+                    SQL_Delay: 0
+          SQL_Remaining_Delay: NULL
+      Slave_SQL_Running_State: Slave has read all relay log; waiting for more updates
+           Master_Retry_Count: 86400
+                  Master_Bind: 
+      Last_IO_Error_Timestamp: 
+     Last_SQL_Error_Timestamp: 
+               Master_SSL_Crl: 
+           Master_SSL_Crlpath: 
+           Retrieved_Gtid_Set: 9a00eba2-0093-11ec-95d7-525400040037:11-33
+            Executed_Gtid_Set: 9a00eba2-0093-11ec-95d7-525400040037:1-15
+                Auto_Position: 1
+         Replicate_Rewrite_DB: 
+                 Channel_Name: 
+           Master_TLS_Version:
+
+show master  status\G
+*************************** 1. row ***************************
+             File: bin.000001
+         Position: 6543
+     Binlog_Do_DB: 
+ Binlog_Ignore_DB: information_schema,performance_schema,test
+Executed_Gtid_Set: 99a00eba2-0093-11ec-95d7-525400040037:1-15
+1 row in set (0.00 sec)
+
+验证数据
+select * from weidashi;
+验证是否可以同步
+master-1上操作insert into weidashi(name) values('luoshuyu');
+以上，主从搭建完毕
+
+
+3、双向复制master-1操作
+stop slave; reset slave;reset slave all;
+change master to \
+    master_host='172.26.0.136', \
+    master_port=3306, \
+    master_user='repl', \
+    master_password='xiadeng@eebbk.mysql#', \
+    master_auto_position=1;
+start slave;
+
+
+
+
+4、方案二：双向复制master-1 master-2分别操作
+reset master; stop slave; reset slave;reset slave all;
+
+master-2分别操作
+change master to \
+    master_host='172.26.1.131', \
+    master_port=3306, \
+    master_user='repl', \
+    master_password='xiadeng@eebbk.mysql#', \
+    master_auto_position=1;
+start slave;
+
+master-1 分别操作
+change master to \
+    master_host='172.26.0.136', \
+    master_port=3306, \
+    master_user='repl', \
+    master_password='xiadeng@eebbk.mysql#', \
+    master_auto_position=1;
+start slave;
+以上，双向复制搭建完毕！
+
+
