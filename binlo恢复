@@ -1,9 +1,9 @@
 # 创建测试数据
 create TABLE weidashi( 
 id bigint(20) NOT NULL AUTO_INCREMENT COMMENT '主键id' ,
-name bigint(20) DEFAULT NULL COMMENT '立拍号',
+name bigint(20) DEFAULT NULL COMMENT '号',
 create_time datetime DEFAULT NULL COMMENT '创建时间', 
-PRIMARY KEY (id))COMMENT='立拍号仓库表';
+PRIMARY KEY (id))COMMENT='号仓库表';
  
  insert into weidashi(name) values('luoshuyu');
  insert into weidashi(name) values('luoshuyu');
@@ -12,12 +12,12 @@ PRIMARY KEY (id))COMMENT='立拍号仓库表';
 
 
 # 备份数据
-/home/smartwatch/bin/mysqldump -h127.0.0.1 -uroot -p'xiadeng@eebbk.mysql#' -P3306 --single-transaction --default-character-set=utf8mb4 --skip-add-locks --master-data=2  smartwatch  > 0830.sql
+/home/smartwatch/bin/mysqldump -h127.0.0.1 -uroot -p'' -P3306 --single-transaction --default-character-set=utf8mb4 --skip-add-locks --master-data=2  smartwatch  > 0830.sql
 
 # 备份之后再插如一些数据
-insert into weidashi(name) values('luoshuyu');
-insert into weidashi(name) values('luoshuyu');
-insert into weidashi(name) values('luoshuyu');
+insert into weidashi(name) values('luouyu');
+insert into weidashi(name) values('luhuyu');
+insert into weidashi(name) values('luohuu');
 
 # 删库，模拟误操作
 drop database smartwatch;
@@ -37,7 +37,7 @@ set global read_only=1;
 reset master;
 
 # 导入备份数据
-mysql -h127.0.0.1 -uroot -pxiadeng@eebbk.mysql# -P3306 smartwatch <0830.sql
+mysql -h127.0.0.1 -uroot -p -P3306 smartwatch <0830.sql
 
 # 查看binlog找出要恢复的pos
 mysqlbinlog --base64-output=decode-rows /tmp/bin.000002
