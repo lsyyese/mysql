@@ -1,0 +1,112 @@
+ wget https://www.keepalived.org/software/keepalived-2.1.5.tar.gz
+ tar xf keepalived-2.1.5.tar.gz
+ yum -y install openssl-devel
+ cd keepalived-2.1.5 && ./configure --prefix=/home/keepalived/
+ make && make install
+ 
+ #启动文件
+ /home/keepalived/sbin/keepalived
+ #配置文件
+ /home/keepalived/etc/keepalived/keepalived.conf
+ 
+ 
+# 172.26.1.131上 
+# vi /home/keepalived/etc/keepalived/keepalived.conf
+ global_defs {
+  router_id HA_MySQL
+}
+
+vrrp_instance VI_223 {
+  state BACKUP
+  interface eth0
+  virtual_router_id 223
+  priority 100
+  advert_int 3
+  nopreempt
+  authentication {
+    auth_type PASS
+    auth_pass 1111
+  }
+#  unicast_src_ip 172.26.1.131
+#  unicast_peer {
+#  172.26.0.136
+#}
+  notify_master /home/keepalived/etc/keepalived/master.sh
+  virtual_ipaddress {
+    172.26.1.223 dev eth0
+  }
+}
+
+virtual_server 172.26.1.223 3306 {
+     delay_loop 2
+     lb_algo wrr
+     lb_kind DR
+     persistence_timeout 60
+     protocol TCP
+     real_server 172.26.1.131 3306 {
+         weight 3
+         # notify_down /etc/keepalived/shutdown.sh
+         TCP_CHECK {
+             connect_timeout 10
+             nb_get_retry 3
+             delay_before_retry 3
+             connect_port 3306
+         } 
+     }
+}
+# 172.26.0.136上 
+# vi /home/keepalived/etc/keepalived/keepalived.conf
+ global_defs {
+  router_id HA_MySQL
+}
+
+vrrp_instance VI_223 {
+  state BACKUP
+  interface eth0
+  virtual_router_id 223
+  priority 100
+  advert_int 3
+  nopreempt
+  authentication {
+    auth_type PASS
+    auth_pass 1111
+  }
+#  unicast_src_ip 172.26.0.136
+#  unicast_peer {
+#  172.26.1.131
+#}
+  notify_master /home/keepalived/etc/keepalived/master.sh
+  virtual_ipaddress {
+    172.26.1.223 dev eth0
+  }
+}
+
+virtual_server 172.26.1.223 3306 {
+     delay_loop 2
+     lb_algo wrr
+     lb_kind DR
+     persistence_timeout 60
+     protocol TCP
+     real_server 172.26.0.136 3306 {
+         weight 3
+         # notify_down /etc/keepalived/shutdown.sh
+         TCP_CHECK {
+             connect_timeout 10
+             nb_get_retry 3
+             delay_before_retry 3
+             connect_port 3306
+         } 
+     }
+}
+
+
+# 172.26.0.136 172.26.1.131 上 
+# vi /home/keepalived/etc/keepalived/master.sh
+#!/bin/bash
+for mysql_port in `netstat -tnlp | grep mysqld | awk '{print }' | cut -d: -f4`
+do
+    mysql -h127.0.0.1 -uroot -p'x#' -P$mysql_port -e' flush logs;set global read_only=off'
+done
+
+# 启动
+/home/keepalived/sbin/keepalived -f /home/keepalived/etc/keepalived/keepalived.conf
