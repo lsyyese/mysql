@@ -1,0 +1,144 @@
+常用命令
+
+# 是否启用binlog日志
+show variables like 'log_bin';
+
+# 查看详细的日志配置信息
+show global variables like '%log%';
+
+# mysql数据存储目录
+show variables like '%dir%';
+
+# 查看binlog的目录
+show global variables like "%log_bin%";
+
+# 查看当前服务器使用的biglog文件及大小
+show binary logs;
+
+# 查看主服务器使用的biglog文件及大小
+
+# 查看最新一个binlog日志文件名称和Position
+show master status;
+
+
+# 事件查询命令
+# IN 'log_name' ：指定要查询的binlog文件名(不指定就是第一个binlog文件)
+# FROM pos ：指定从哪个pos起始点开始查起(不指定就是从整个文件首个pos点开始算)
+# LIMIT [offset,] ：偏移量(不指定就是0)
+# row_count ：查询总条数(不指定就是所有行)
+show binlog events [IN 'log_name'] [FROM pos] [LIMIT [offset,] row_count];
+
+# 查看 binlog 内容
+show binlog events;
+
+# 查看具体一个binlog文件的内容 （in 后面为binlog的文件名）
+show binlog events in 'master.000003';
+
+# 设置binlog文件保存事件，过期删除，单位天
+set global expire_log_days=3; 
+
+# 删除当前的binlog文件
+reset master; 
+
+# 删除slave的中继日志
+reset slave;
+
+# 删除指定日期前的日志索引中binlog日志文件
+purge master logs before '2019-03-09 14:00:00';
+
+# 删除指定日志文件
+purge master logs to 'master.000003';
+
+
+# mysqlbinlog 的执行格式
+mysqlbinlog [options] log_file ...
+
+# 查看bin-log二进制文件（shell方式）
+mysqlbinlog -v --base64-output=decode-rows /var/lib/mysql/master.000003
+
+# 查看bin-log二进制文件（带查询条件）
+mysqlbinlog -v --base64-output=decode-rows /var/lib/mysql/master.000003 \
+    --start-datetime="2019-03-01 00:00:00"  \
+    --stop-datetime="2019-03-10 00:00:00"   \
+    --start-position="5000"    \
+    --stop-position="20000"
+参数
+1.版本号不同：
+# /usr/local/mysql57/bin/mysqlbinlog --version
+/usr/local/mysql57/bin/mysqlbinlog Ver 3.4 for linux-glibc2.12 at x86_64
+# /usr/local/mysql80/bin/mysqlbinlog --version  
+/usr/local/mysql80/bin/mysqlbinlog  Ver 8.0.12 for linux-glibc2.12 on x86_64 (MySQL Community Server - GPL)
+2.新增参数：
+--server-public-key-path=name 
+--get-server-public-key
+--ssl-fips-mode=name
+--print-table-metadata
+新增TLS的版本支持TLSv1.2
+3.剔除参数：
+--secure-auth
+--ssl 使用参数替代--ssl-mode
+--ssl-verify-server-cert 使用参数--ssl-mode=VERIFY_IDENTITY替代
+ 
+4.mysqlbinlog参数说明：
+--base64-output=name        binlog输出语句的base64解码 分为三类：       
+                默认是值auto ,仅打印base64编码的需要的信息，如row-based 事件和事件的描述信息。
+                never 仅适用于不是row-based的事件
+                decode-rows  配合--verbose选项一起使用解码行事件到带注释的伪SQL语句
+--bind-address=name       要绑定的IP地址   
+--character-sets-dir=name  指定字符集的路径
+--set-charset=name         将“SET NAMES character_set”添加到输出中，用于改变binlog的字符集。
+-d, --database=name        列出数据库的名称(仅限binlog文件存储在本地)
+--rewrite-db=name          将binlog中的事件信息重定向到新的数据库
+--调试信息相关：
+-#, --debug[=#]           非调试版本，获取调试信息并退出
+--debug-check             非调试版本，获取调试信息并退出
+--debug-info              非调试版本，获取调试信息并退出
+--default-auth=name       默认使用的客户端认证插件
+-D, --disable-log-bin     禁用binlog日志，若开启--to-last-log并发送输出文件到相同的mysql server。这种方式避免无限循环。
+  在规避数据库奔溃恢复数据的时候有用。注意：需要super权限来使用此选项。
+-F, --force-if-open   强制开启binlog，若binlog非正常关闭，默认是on可使用--skip-force-if-open关闭。
+-f, --force-read      强制读取未知的binlog事件
+-H, --hexdump         使用十六进制和ASCII码转储输出的信息
+-h, --host=name       获取binlog的服务器IP地址或者域名
+-i, --idempotent      通知服务器使用幂等模式应用行事件
+-l, --local-load=name  准备LOAD DATA INFILE的本地临时文件指定目录。
+ -o, --offset=#       跳过前N个条目
+  -p, --password[=name]  连接远程服务器的密码
+--plugin-dir=name      客户端插件的目录。
+-P, --port=#           用于连接的端口，0表示默认值。端口使用的优先级：my.cnf，$ MYSQL_TCP_PORT,/etc/services，内置默认值（3306）
+--protocol=name       用于连接的协议（tcp，socket，pipe，memory)
+-R, --read-from-remote-server 从MySQL远程服务器读取二进制日志，是read-from-remote-master = BINLOG-DUMP-NON-GTIDS的别名。
+--read-from-remote-master=name  
+--raw               配合参数-R一起使用,输出原始的binlog数据而不是SQL语句
+-r, --result-file=name  输出指定的文件，和--row一起使用，此时是数据文件的前缀。
+-t, --to-last-log   配合-R一起使用
+--server-id=#  仅提取服务器创建的binlog条目
+                      给定的id。
+--server-id-bits=# 设置server-id中的有效位数。
+ 
+-s, --short-form   仅适用于常规查询，没有额外的信息和row-based事件信息。仅用于测试，不使用于生产环境。
+如果你想抑制base64-output，考虑使用--base64-output = never代替。
+-S, --socket=name   使用socket文件连接。
+---SSL相关的参数：
+--server-public-key-path=name PEM格式的RSA 秘钥
+--get-server-public-key       服务器的公钥
+--ssl-mode=name              SSL连接的模式
+--ssl-ca=name                PEM格式的CA文件
+--ssl-capath=name           CA路径
+--ssl-cert=name             PEM格式的X509证书
+--ssl-cipher=name           使用的SSL密码
+--ssl-key=name              PEM格式的X509密钥
+
+例子
+查看日志
+    # mysqlbinlog mysql-bin.407
+
+根据position从20-2000查找resource库相关记录，并输出到指定文件：
+    # mysqlbinlog --start-position="20" --stop-position="2000" --database=resource mysql-bin.407 --result-file=result.sql
+
+查找并导入数据库：
+    # mysqlbinlog --start-position="20" --stop-position="2000" --database=resource mysql-bin.407 | mysql -u root
+
+还可以根据时间来查找记录：
+    # mysqlbinlog --start-datetime="2012-09-20 8:10:00" --stop-datetim="2012-09-25 07:30:00" mysql-bin.407 --result-file=result.sql
+
