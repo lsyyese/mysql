@@ -1,3 +1,8 @@
+###基于keepalived的mysql高可用，两个mysql实例为双向复制，同时只有一个实例为可写状态###
+
+
+1、安装keepalived
+ 
  wget https://www.keepalived.org/software/keepalived-2.1.5.tar.gz
  tar xf keepalived-2.1.5.tar.gz
  yum -y install openssl-devel
@@ -9,7 +14,7 @@
  #配置文件
  /home/keepalived/etc/keepalived/keepalived.conf
  
- 
+ 2、配置更改
 # 172.26.1.131上 
 # vi /home/keepalived/etc/keepalived/keepalived.conf
  global_defs {
