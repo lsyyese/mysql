@@ -1,0 +1,81 @@
+全量备份
+time innobackupex \
+--defaults-file=/home/friend/my.cnf \
+--host=127.0.0.1 \
+--user=root \
+--password='' \
+--port=3308 \
+--parallel=4 \
+--slave-info \
+--no-timestamp \  #不要创建一个时间戳目录来存储备份，指定到自己想要的备份文件夹
+/data/backup_test01
+
+innobackupex \
+--host=127.0.0.1 \
+--user=root \
+--password='' \
+--port=3308 \
+--apply-log \
+--use-memory=4G \
+/data/backup_test01
+
+service friend_slave stop
+mv friend_slave friend_slave_backup
+
+mv /data/backup_test01 friend_slave
+chown -R mysql:mysql /data/friend_slave
+service friend_slave start
+
+增量备份
+#备份全量一次
+time innobackupex \
+--defaults-file=/home/friend/my.cnf \
+--host=127.0.0.1 \
+--user=root \
+--password='' \
+--port=3308 \
+--parallel=4 \
+--slave-info \
+/data/
+增量一次
+# ls /data/
+2021-04-08_13-36-11
+time innobackupex \
+--defaults-file=/home/friend/my.cnf \
+--host=127.0.0.1 \
+--user=root \
+--password='' \
+--port=3308 \
+--parallel=4 \
+--slave-info \
+--incremental /data/ \ 
+--incremental-basedir=/data/2021-04-08_13-36-11/
+/data/
+
+增量第二次
+# ls /data/backup_test01
+2021-04-08_13-36-11 2021-04-08_13-41-59
+time innobackupex \
+--defaults-file=/home/friend/my.cnf \
+--host=127.0.0.1 \
+--user=root \
+--password='' \
+--port=3308 \
+--parallel=4 \
+--slave-info \
+--incremental /data/ \ 
+--incremental-basedir=/data/2021-04-08_13-41-59/
+/data/
+# ls /data/
+2021-04-08_13-36-11 2021-04-08_13-41-59 2021-04-08_14-01-16
+#对全量备份进行prepare
+innobackupex --apply-log --redo-only --use-memory=1G /data/2021-04-08_13-36-11/
+#第一个增量备份prepare
+innobackupex --apply-log --redo-only --use-memory=1G /data/2021-04-08_13-36-11/ --incremental-dir=/data/2021-04-08_13-41-59
+#最后一个增量备份prepare
+innobackupex --apply-log --use-memory=1G /data/2021-04-08_13-36-11 --incremental-dir=/data/2021-04-08_14-01-16 
+
+#只还原最终准备好的全量备份即可
+innobackupex --datadir=/var/lib/mysql --copy-back /data/2017-04-08_13-36-11
+chown -R mysql:mysql /var/lib/mysql
+service friend_slave start
