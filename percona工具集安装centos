@@ -1,0 +1,13 @@
+yum install -y libaio 
+yum -y install perl-DBD-MySQL --nogpgcheck >/dev/null 2>&1 
+yum -y install perl-DBI perl-Digest-MD5 --nogpgcheck >/dev/null 2>&1 
+yum -y install numactl.x86_64 numactl-devel.x86_64 numactl-libs.x86_64 >/dev/null 2>&1 
+yum -y install perl-ExtUtils-CBuilder perl-ExtUtils-MakeMaker --nogpgcheck >/dev/null 2>&1 
+yum -y install perl-Time-HiRes --nogpgcheck >/dev/null 2>&1 
+yum -y install perl-IO-Socket-SSL --nogpgcheck >/dev/null 2>&1 
+yum -y install perl-TermReadKey --nogpgcheck >/dev/null 2>&1 
+yum -y install rsync >/dev/null 2>&1 
+
+rpm -ivh libev4-4.15-7.1.x86_64.rpm
+rpm -ivh percona-xtrabackup-24-2.4.4-1.el6.x86_64.rpm
+rpm -ivh percona-toolkit-3.0.8-1.el6.x86_64.rpm
