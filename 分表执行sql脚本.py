@@ -19,7 +19,7 @@ domestic_password = '123456'
 domestic_main_DB = 'db1'
 
 
-# 迁移后行数校验
+
 def data_check(n):
     the_connection = pymysql.connect(host=domestic_main_IP, user=domestic_user, password=domestic_password,
                                      database=domestic_main_DB,
