@@ -54,3 +54,15 @@ if __name__ == '__main__':
         obj = t.submit(data_check, i)
 
     t.shutdown(wait=True)
+
+
+########################################
+# 解决pymysql返回数据为函数的问题
+from pymysql import converters
+
+conv = converters.conversions
+conv[246] = float
+conv[10] = str
+conv[7] = str
+conv[12] = str
+conv[11] = str
