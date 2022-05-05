@@ -49,3 +49,21 @@ function autossh()
 remotePwd='MKJJSabc2343434'
 filepath=$1  
 autossh  $filepath
+
+#########################
+SELECT
+  *
+FROM
+  `t_shumei_censor_log`
+WHERE
+  code = 1100
+  and censor_type = 2
+  and (
+    content like 'http://watch-customicon-dn.xiaotiancai.com%'
+    or content like 'http://bbksmartwatch.qiniucdn.com%'
+    or content like 'http://watch-customicon-dn.okii.com%'
+    or content like 'http://watchcdn-pvt.okii.com%'
+    or content like 'http://babyicon-pvt.xiaotiancai.com%'
+    or content like 'http://babyicon-pvt.okii.com%'
+  )  INTO OUTFILE '/tmp/text.csv'  FIELDS TERMINATED BY ','  OPTIONALLY ENCLOSED BY '"' LINES TERMINATED BY '\r\n';
+
